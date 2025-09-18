@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Costos MEPIS</title>
+    <style>
+        body { 
+            font-family: system-ui, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; }
+        .formulario {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Dos columnas */
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .campo { display: flex; flex-direction: column; }
+        /* Campo que ocupa todo el ancho */
+        .full-width { grid-column: 1 / -1; }
+
+        label { margin-bottom: 0.25rem; font-weight: 500; }
+        input { padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        button {
+            grid-column: 1 / -1; /* Ocupa todo el ancho */
+            padding: 0.75rem; font-size: 1rem; font-weight: bold; color: #fff;
+            background-color: #6a0dad; border: none; border-radius: 4px; cursor: pointer;
+        }
+        .resultados {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #eef;
+            border-radius: 4px;
+        }
+        .resultados p {
+            font-size: 1.1rem;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .resultados span { font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Calculadora de Costos MEPIS</h1>
+
+        <div class="formulario">
+            <div class="campo full-width">
+                <label for="inputBrutoNoMepis">Total de NoMepi$ generados (antes de comisiones)</label>
+                <input type="number" id="inputBrutoNoMepis" value="20864.71" step="any">
+            </div>
+             <div class="campo">
+                <label for="inputTotalMepis">Total de MEPI$ debitados</label>
+                <input type="number" id="inputTotalMepis" value="13.81" step="any">
+            </div>
+             <div class="campo">
+                <label for="inputComisionMepis">Comisión (en MEPI$)</label>
+                <input type="number" id="inputComisionMepis" value="0.08" step="any">
+            </div>
+            <div class="campo">
+                <label for="inputComisionNoMepis">Comisión (en NoMEPI$)</label>
+                <input type="number" id="inputComisionNoMepis" value="104.31" step="any">
+            </div>
+            <div class="campo">
+                <label for="inputDerechosTorcido">Derechos Torcido (en NoMEPI$)</label>
+                <input type="number" id="inputDerechosTorcido" value="2.06" step="any">
+            </div>
+            <button onclick="calcularCostos()">Calcular</button>
+        </div>
+        
+        <div class="resultados">
+            <p>COSTO TOTAL ESTIMADO: <span id="costoTotal">NoMEPI$ 0.00</span></p>
+            <p>ComisionMEPISEnNoMEPIS (costo de venta): <span id="comisionMEPIS">MEPI$ 0.00 </span> | <span id="comisionMEPISenNoMEPIS">NoMEPI$ 0.00</span></p>
+ 	    <hr>
+            <p>NoMEPI$ que recibís en realidad: <span id="MEPISReales">NoMEPI$ 0.00</span></p>
+		
+            <p>Tipo de cambio final (costo de venta): <span id="costoVenta">NoMEPI$ 0.00</span></p>
+		
+        </div>
+    </div>
+
+    <script>
+        function calcularCostos() {
+            // 1. LEEMOS LOS DATOS DE ENTRADA
+            const montoBrutoNoMEPIS = parseFloat(document.getElementById('inputBrutoNoMEPIS').value);
+            const montoTotalMEPIS = parseFloat(document.getElementById('inputTotalMEPIS').value);
+            const comisionMEPIS = parseFloat(document.getElementById('inputComisionMEPIS').value);
+            const comisionNoMEPIS = parseFloat(document.getElementById('inputComisionNoMEPIS').value);
+            const derechosTorcido = parseFloat(document.getElementById('inputDerechosTorcido').value);
+
+            // 2. HACEMOS LOS CÁLCULOS
+            
+            // a) Calculamos los dólares netos vendidos y el tipo de cambio implícito
+            const MEPISNetosVendidos = montoTotalMEPIS - comisionMEPIS;
+            const tipoDeCambioImplicito = montoBrutoNoMEPIS / MEPISNetosVendidos;
+
+            // b) AUTOMATIZACIÓN: Convertimos la comisión MEPIS a NoMEPIS usando esa tasa
+            const comisionMEPISEnNoMEPIS = comisionMEPIS * tipoDeCambioImplicito;
+
+            // c) Sumamos todos los costos para obtener el costo total
+            const costoTotal = comisionNoMEPIS + derechosTorcido + comisionMEPISEnNoMEPIS;
+
+            // d) Al total de NoMEPIS generados le restamos el costo total
+            const NoMEPISRealesRecibidos = montoBrutoNoMEPIS - costoTotal;
+
+            // e) Calculamos el tipo de cambio efectivo final
+            const costoDeVenta = NoMEPISRealesRecibidos / montoTotalMEPIS;
+
+            // 3. MOSTRAMOS LOS RESULTADOS EN LA PANTALLA
+            document.getElementById('costoTotal').textContent = `AR$ ${costoTotal.toFixed(2)}`;
+	    document.getElementById('comisionMEPISEnNoMEPIS').textContent = `NoMEPI$ ${comisionMEPISEnNoMEPIS.toFixed(2)}`;
+            document.getElementById('NoMEPISReales').textContent = `NoMEPI$ ${NoMEPISRealesRecibidos.toFixed(2)}`;
+            document.getElementById('costoVenta').textContent = `$ ${costoDeVenta.toFixed(2)}`;
+	    document.getElementById('comisionMEPIS').textContent = `$ ${comisionMEPIS.toFixed(2)}`;
+        }
+        
+        // Ejecutamos el cálculo una vez al cargar la página
+        calcularCostos();
+    </script>
+
+</body>
+</html>
